@@ -1,6 +1,6 @@
 # Documentação da Base ML-Ready e Suporte à Decisão (Requisitos 5 e 6)
 
-Data de geração: 14/10/2026 18:56:25 UTC
+Data de geração: 14/10/2026 19:18:42 UTC
 
 ## 1. Especificação Formal da Modelagem (Requisito 5)
 
