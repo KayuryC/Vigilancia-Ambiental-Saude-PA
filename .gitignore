@@ -1,0 +1,63 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C libraries
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+
+# Requisito do Projeto: Dados NÃO vão para o Git
+# Ignora arquivos de dados dentro de data/, mas preserva os diretórios via .gitkeep
+data/*
+!data/bronze/
+!data/silver/
+!data/gold/
+!data/quarantine/
+!data/**/.gitkeep
+
+# Arquivos de dados soltos
+*.csv
+*.tsv
+*.xlsx
+*.parquet
+*.jsonl
+*.zip
+*.gz
+*.tar
