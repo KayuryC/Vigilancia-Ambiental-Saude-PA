@@ -52,7 +52,7 @@ data/*
 !data/quarantine/
 !data/**/.gitkeep
 
-# Arquivos de dados soltos
+# Arquivos de dados soltos e estados locais
 *.csv
 *.tsv
 *.xlsx
@@ -61,3 +61,6 @@ data/*
 *.zip
 *.gz
 *.tar
+data/**/*.json
+data/**/*.db
+data/**/*.parquet
