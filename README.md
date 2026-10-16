@@ -90,9 +90,15 @@ O objetivo é correlacionar o histórico de **focos de queimadas (INPE)** e indi
 3. **Requisito 3 — Medalhão:** Camadas Bronze (com metadados e hash SHA-256), Silver (deduplicada, tratada e com chaves primárias verificadas por asserção) e Gold (indicadores e ML-Ready sem limpeza adicional).
 4. **Requisito 4 — Reprodutibilidade:** Repositório Git com commits atômicos por processo, sem dados versionados, requirements fixados e dicionário de dados detalhado em [`docs/dicionario_de_dados.md`](docs/dicionario_de_dados.md).
 5. **Requisito 5 — Base ML-Ready e Anti-Vazamento:** Split temporal (Jan-Ago vs Set-Nov), baseline trivial implementado, modelo Random Forest calibrado, e checklist anti-leakage documentado em [`docs/requisito_ml_ready_decisao.md`](docs/requisito_ml_ready_decisao.md).
-6. **Requisito 6 — Decisão:** Decisor claro (SESPA), ação prática de envio de insumos, limiar justificado e trade-off explícito de custos de FP vs FN.
+6. **Requisito 6 — Decisão:** Decisor claro (SESPA), ação prática de envio de insumos, limiar justificado, trade-off explícito de custos de FP vs FN e limitações metodológicas documentadas em [`docs/requisito_ml_ready_decisao.md`](docs/requisito_ml_ready_decisao.md).
+
+---
+
+## 👥 Integrantes da Equipe e Contribuições
+* **Fernando Fonseca** ([@fernandofonsecadev](mailto:fernandofonsecadev@gmail.com)) — Auditoria de conformidade com os requisitos, especificação de limitações dos dados, registro de licenças/fontes públicas e guia operacional de decisão.
+* **Kayo Carneiro** ([@kayocarneiro77](mailto:kayocarneiro77@gmail.com)) — Engenharia do pipeline medalhão, ingestão de dados, modelagem preditiva ML-Ready e dashboard interativo Streamlit.
 
 ---
 
 ## 🤖 Declaração de Uso de IA
-Ferramentas de Inteligência Artificial Generativa foram utilizadas como assistente técnico de engenharia de software e estruturação do projeto. Todo o código, regras epidemiológicas, validações e decisões foram revisados e são de pleno domínio e autoria da equipe.
+Ferramentas de Inteligência Artificial Generativa foram utilizadas como assistente técnico de engenharia de software e estruturação da documentação. Todo o código, regras epidemiológicas, validações e decisões foram revisados e são de pleno domínio e autoria da equipe.
