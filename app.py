@@ -4,7 +4,7 @@ Atende ao Requisito 6 (A Decisão):
 - Interface web interativa em Streamlit consumindo a camada Gold.
 - Simulação dinâmica do limiar de corte (Threshold) com cálculo de custos de FP vs FN.
 - Filtros por mês de decisão, mesorregião e nível de alerta.
-- Visualização temporal interativa (Queimadas INPE vs Internações DataSUS).
+- Visualização temporal interativa (Queimadas INPE vs casos de SRAG hospitalizados, OpenDataSUS).
 - Ranking priorizado de municípios para despacho de kits de oxigênio e broncodilatadores.
 """
 
@@ -44,6 +44,17 @@ def load_data():
 
 df_indicators, df_decisions = load_data()
 
+# Premissas de custo do grupo (sem fonte pública; ver docs/requisito_ml_ready_decisao.md)
+CUSTO_FP = 3500.0
+CUSTO_FN = 45000.0
+ALTO_CORTE = 0.70
+# Limiar escolhido pelo pipeline por menor custo em validação cronológica dentro do treino
+LIMIAR_ADOTADO = float(df_decisions["limiar_adotado"].iloc[0]) if "limiar_adotado" in df_decisions.columns else 0.40
+
+
+def brl(v: float) -> str:
+    # O Streamlit interpreta pares de "$" no Markdown como fórmula (LaTeX); "\\$" mostra o cifrão literal.
+    return "R\\$ " + f"{v:,.0f}".replace(",", ".")
 # -------------------------------------------------------------
 # BARRA LATERAL (FILTROS E CONTROLES DE DECISÃO)
 # -------------------------------------------------------------
@@ -68,19 +79,19 @@ meso_selecionada = st.sidebar.selectbox("📍 Mesorregião do Pará:", mesos_dis
 st.sidebar.markdown("---")
 st.sidebar.subheader("⚙️ Calibração de Decisão")
 threshold = st.sidebar.slider(
-    "Limiar de Alerta (Probabilidade de Risco):",
-    min_value=0.10,
+    "Limiar de Alerta (score do modelo):",
+    min_value=0.05,
     max_value=0.90,
-    value=0.40,
+    value=min(max(LIMIAR_ADOTADO, 0.05), 0.90),
     step=0.05,
-    help="Define a probabilidade a partir da qual o município recebe alerta de envio de insumos."
+    help="Define o score a partir do qual o município recebe alerta de envio de insumos. O padrão é o limiar escolhido pelo pipeline."
 )
 
 st.sidebar.info(
-    f"**Limiar Adotado:** {threshold:.2f}\n\n"
-    "• Custo Falso Positivo: **R$ 3.500,00**\n"
-    "• Custo Falso Negativo: **R$ 45.000,00**\n\n"
-    "*O limiar de 0.40 foi escolhido para priorizar o Recall em saúde pública.*"
+    f"**Limiar adotado pelo pipeline:** {LIMIAR_ADOTADO:.2f}\n\n"
+    f"• Custo Falso Positivo: **{brl(CUSTO_FP)}** (premissa)\n"
+    f"• Custo Falso Negativo: **{brl(CUSTO_FN)}** (premissa)\n\n"
+    "*O limiar foi escolhido por menor custo esperado em validação cronológica dentro do treino. O score do modelo não é uma probabilidade calibrada.*"
 )
 
 # -------------------------------------------------------------
@@ -93,7 +104,7 @@ if meso_selecionada != "Todas":
 
 # Recalcular prescrição dinâmica baseada no slider de threshold
 df_filtrado["decisao_dinamica"] = np.where(
-    df_filtrado["probabilidade_risco"] >= 0.70,
+    df_filtrado["probabilidade_risco"] >= ALTO_CORTE,
     "Alerta Alto: Envio de Kit Completo (O2 + Broncodilatadores)",
     np.where(
         df_filtrado["probabilidade_risco"] >= threshold,
@@ -103,8 +114,8 @@ df_filtrado["decisao_dinamica"] = np.where(
 )
 
 total_mun = len(df_filtrado)
-alerta_alto = (df_filtrado["probabilidade_risco"] >= 0.70).sum()
-alerta_medio = ((df_filtrado["probabilidade_risco"] >= threshold) & (df_filtrado["probabilidade_risco"] < 0.70)).sum()
+alerta_alto = (df_filtrado["probabilidade_risco"] >= ALTO_CORTE).sum()
+alerta_medio = ((df_filtrado["probabilidade_risco"] >= threshold) & (df_filtrado["probabilidade_risco"] < ALTO_CORTE)).sum()
 pop_sob_alerta = df_filtrado[df_filtrado["probabilidade_risco"] >= threshold]["populacao_censo_2022"].sum()
 
 # -------------------------------------------------------------
@@ -117,9 +128,13 @@ st.markdown(
 
 st.markdown(
     """
-    > *"Cruzando as bases do **INPE (Focos de Queimada)**, **DataSUS (Internações)** e **IBGE (Censo 2022)**, 
-    o pipeline antecipa surtos de insuficiência respiratória na Amazônia e orienta o despacho preventivo de oxigênio e medicamentos."*
+    > *"Cruzando as bases do **INPE (focos de calor)**, **OpenDataSUS (SRAG hospitalizado)** e **IBGE (Censo 2022)**,
+    o pipeline estima o risco de sobrecarga por SRAG no mês seguinte e orienta o despacho preventivo de oxigênio e medicamentos."*
     """
+)
+st.caption(
+    "Resultado do recorte (Pará, 2023): o risco é previsto principalmente pelo histórico recente de casos de cada município; "
+    "os focos de calor não agregaram poder preditivo mensurável. Detalhes e limitações em docs/requisito_ml_ready_decisao.md."
 )
 
 # -------------------------------------------------------------
@@ -164,7 +179,7 @@ st.markdown("---")
 tab1, tab2, tab3 = st.tabs(["📊 Dinâmica Temporal Estadual", "🏆 Ranking de Municípios Críticos", "⚖️ Análise de Custos e Decisão"])
 
 with tab1:
-    st.subheader("Evolução Temporal no Pará: Queimadas vs. Taxa de Internações")
+    st.subheader("Evolução Temporal no Pará: Queimadas vs. Taxa de SRAG Hospitalizado")
     
     # Agregação para o gráfico temporal
     df_ind_tempo = df_indicators.copy()
@@ -188,25 +203,25 @@ with tab1:
         yaxis="y1"
     ))
 
-    # Linha de Internações
+    # Linha de SRAG hospitalizado
     fig_tempo.add_trace(go.Scatter(
         x=mensal["ano_mes"],
         y=mensal["taxa_media"],
-        name="Taxa de Internação / 100k hab (DataSUS)",
+        name="Taxa de SRAG hospitalizado / 100k hab (OpenDataSUS)",
         line=dict(color="#1f77b4", width=3.5),
         mode="lines+markers",
         yaxis="y2"
     ))
 
     fig_tempo.update_layout(
-        title="Impacto Sazonal da Estiagem: Disparo de Queimadas e Resposta Hospitalar",
+        title="Queimadas (INPE) e SRAG hospitalizado (OpenDataSUS) por mês, sem relação causal assumida",
         xaxis=dict(title="Mês de Competência"),
         yaxis=dict(
             title=dict(text="Total de Focos de Queimada", font=dict(color="#e6550d")),
             tickfont=dict(color="#e6550d")
         ),
         yaxis2=dict(
-            title=dict(text="Taxa de Internação por 100k hab", font=dict(color="#1f77b4")),
+            title=dict(text="Taxa de SRAG hospitalizado por 100k hab", font=dict(color="#1f77b4")),
             tickfont=dict(color="#1f77b4"),
             overlaying="y",
             side="right"
@@ -235,7 +250,7 @@ with tab2:
         text=ranking_top["probabilidade_risco"].apply(lambda v: f"{v*100:.1f}%")
     )
 
-    fig_bar.add_vline(x=0.70, line_dash="dash", line_color="red", annotation_text="Alerta Alto (>= 70%)")
+    fig_bar.add_vline(x=ALTO_CORTE, line_dash="dash", line_color="red", annotation_text=f"Alerta Alto (>= {ALTO_CORTE:.2f})")
     fig_bar.add_vline(x=threshold, line_dash="dot", line_color="orange", annotation_text=f"Limiar ({threshold:.2f})")
 
     fig_bar.update_layout(
@@ -248,25 +263,38 @@ with tab2:
 
 with tab3:
     st.subheader("Matriz de Trade-Off e Análise de Risco")
-    
+
     col_a, col_b = st.columns(2)
     with col_a:
         st.markdown(
-            """
+            f"""
             ### Racional do Decisor (SESPA):
-            * **Falso Positivo (FP):** Enviar um lote preventivo de cilindros de oxigênio e medicamentos para um município que não atingiu a saturação crítica.  
-              *Custo estimado:* **R$ 3.500,00** (frete logístico fluvial/rodoviário). O insumo continua utilizável e estocado.
-            * **Falso Negativo (FN):** Deixar de alertar um município que sofreu surto respiratório severo por fumaça.  
-              *Custo estimado:* **R$ 45.000,00** por caso (remoção de urgência por UTI aérea, ocupação de leito intensivo e risco inaceitável de óbitos evitáveis).
+            * **Falso Positivo (FP):** Enviar um lote preventivo de cilindros de oxigênio e medicamentos para um município que não chegou à sobrecarga.  
+              *Custo assumido:* **{brl(CUSTO_FP)}** (frete logístico fluvial/rodoviário). O insumo continua utilizável e estocado.
+            * **Falso Negativo (FN):** Deixar de alertar um município que chegou à sobrecarga por SRAG.  
+              *Custo assumido:* **{brl(CUSTO_FN)}** por município-mês (remoção de urgência, ocupação de leito intensivo e risco de óbitos evitáveis).
+
+            *Os dois custos são **premissas do grupo**, sem fonte pública. O relatório traz a sensibilidade da conclusão a essas premissas.*
             """
         )
     with col_b:
+        y_all = df_decisions["label_sobrecarga_proximo_mes"].astype(int)
+        pred_all = df_decisions["probabilidade_risco"] >= threshold
+        tp = int((pred_all & (y_all == 1)).sum())
+        fp = int((pred_all & (y_all == 0)).sum())
+        fn = int((~pred_all & (y_all == 1)).sum())
+        recall_t = tp / (tp + fn) if (tp + fn) else 0.0
+        precisao_t = tp / (tp + fp) if (tp + fp) else 0.0
+        custo_modelo = fp * CUSTO_FP + fn * CUSTO_FN
+        custo_todos = int((y_all == 0).sum()) * CUSTO_FP
+        custo_nenhum = int((y_all == 1).sum()) * CUSTO_FN
         st.info(
             f"""
-            ### Efeito do Limiar Escolhido ({threshold:.2f}):
-            * Como o custo de um falso negativo é **12,8 vezes maior** que o de um falso positivo, calibrar o modelo para priorizar **Recall (80.18%)** minimiza o risco sanitário e financeiro do estado.
-            * Municípios sob vigilância ativa neste corte: **{alerta_alto + alerta_medio}**
-            * Municípios mantidos em rotina: **{total_mun - (alerta_alto + alerta_medio)}**
+            ### Efeito do Limiar ({threshold:.2f}) em todo o período de teste (set a nov/2023):
+            * Recall **{recall_t:.1%}** e precisão **{precisao_t:.1%}** ({tp} acertos, {fp} alertas falsos, {fn} omissões).
+            * Custo esperado com este limiar: **{brl(custo_modelo)}**.
+            * Referências: alertar todos = **{brl(custo_todos)}**; não alertar ninguém = **{brl(custo_nenhum)}**.
+            * Municípios sob vigilância neste corte (mês e região selecionados): **{alerta_alto + alerta_medio}**; mantidos em rotina: **{total_mun - (alerta_alto + alerta_medio)}**.
             """
         )
 
