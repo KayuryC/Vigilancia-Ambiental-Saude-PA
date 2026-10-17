@@ -97,6 +97,7 @@ O objetivo é correlacionar o histórico de **focos de queimadas (INPE)** e indi
 ## 👥 Integrantes da Equipe e Contribuições
 * **Fernando Fonseca** ([@fernandofonsecadev](mailto:fernandofonsecadev@gmail.com)) — Auditoria de conformidade com os requisitos, especificação de limitações dos dados, registro de licenças/fontes públicas e guia operacional de decisão.
 * **Kayo Carneiro** ([@kayocarneiro77](mailto:kayocarneiro77@gmail.com)) — Engenharia do pipeline medalhão, ingestão de dados, modelagem preditiva ML-Ready e dashboard interativo Streamlit.
+* **Nathalia Gomes** ([@naathggg](mailto:naathgg213@gmail.com)) - Migração do pipeline para a base real SRAG, processamento e agregação dos dados, tratamento de inconsistências e teste de idempotência.
 
 ---
 
