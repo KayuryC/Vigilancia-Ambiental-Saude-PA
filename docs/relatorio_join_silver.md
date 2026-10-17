@@ -1,6 +1,6 @@
 # Relatório de Auditoria de Cruzamento das Bases (Requisito 1)
 
-Data de execução: 17/10/2026 00:09:15 UTC
+Data de execução: 17/10/2026 12:08:18 UTC
 
 ## 1. Definição da Chave de Cruzamento
 * **Chave Primária Composta:** `codigo_ibge` (código de 7 dígitos do município) e `ano_mes` (formato YYYY-MM).
