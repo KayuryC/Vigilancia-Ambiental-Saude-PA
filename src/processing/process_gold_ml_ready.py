@@ -91,7 +91,7 @@ class GoldMLReadyProcessor:
             "focos_lag_1m",
             "taxa_internacao_100k",
             "taxa_internacao_lag_1m",
-            "internacoes_urgencia",
+            "internacoes_uti",
             "internacoes_infantis",
             "internacoes_idosos",
             "periodo_estiagem"
@@ -258,7 +258,7 @@ Data de geração: {datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M:%S UTC")
 ---
 
 ## 5. A Frase de Decisão do Projeto (Template Oficial)
-> *"Cruzando as bases do **INPE (Focos de Calor)**, **DataSUS (Internações Respiratórias)** e **IBGE (População do Censo 2022)**, identificamos os municípios com alto risco de sobrecarga hospitalar. Recomendamos que a **Secretaria de Estado de Saúde Pública do Pará (SESPA)** envie **Kits Preventivos de Insumos Respiratórios** nos próximos **30 dias**, priorizando os **municípios com risco $\ge 70\%$**. Se agir, o ganho esperado é a **garantia de atendimento de emergência a {m['matriz']['tp']} municípios críticos**; se errarmos, o custo de um falso positivo é de **R$ 3.500,00** em logística estocável, versus o risco inaceitável de desabastecimento de **R$ 45.000,00** por caso negligenciado."*
+> *"Cruzando as bases do **INPE (Focos de Calor)**, **OpenDataSUS (SRAG hospitalizado)** e **IBGE (População do Censo 2022)**, identificamos os municípios com alto risco de sobrecarga hospitalar. Recomendamos que a **Secretaria de Estado de Saúde Pública do Pará (SESPA)** envie **Kits Preventivos de Insumos Respiratórios** nos próximos **30 dias**, priorizando os **municípios com risco $\ge 70\%$**. Se agir, o ganho esperado é a **garantia de atendimento de emergência a {m['matriz']['tp']} municípios críticos**; se errarmos, o custo de um falso positivo é de **R$ 3.500,00** em logística estocável, versus o risco inaceitável de desabastecimento de **R$ 45.000,00** por caso negligenciado."*
 """
         with open(report_path, "w", encoding="utf-8") as f:
             f.write(content)

@@ -2,7 +2,7 @@
 Orquestrador Central do Pipeline: Da Ingestão à Decisão.
 Atende ao Requisito 4 (Reprodutibilidade Total):
 Executa o fluxo completo de ponta a ponta:
-1. Ingestão Bronze (IBGE API, INPE Arquivo CSV/ZIP, DataSUS Banco Relacional com Watermark)
+1. Ingestão Bronze (IBGE API, INPE Arquivo CSV/ZIP, OpenDataSUS SRAG Arquivo CSV com checkpoint por hash)
 2. Processamento Silver (Deduplicação, Integridade Referencial, Verificação de PKs, Quarentena)
 3. Processamento Gold (Taxas Epidemiológicas, Features Causais, Base ML-Ready e Suporte à Decisão SESPA)
 """
@@ -19,11 +19,10 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.ingestion.ingest_ibge_api import IBGEIngestor
 from src.ingestion.ingest_inpe_queimadas import INPEQueimadasIngestor
-from src.ingestion.seed_datasus_relational import seed_operational_database
-from src.ingestion.ingest_datasus_relational import DataSUSRelationalIngestor
+from src.ingestion.ingest_srag_opendatasus import SRAGIngestor
 from src.processing.process_silver_dim_municipios import SilverMunicipiosProcessor
 from src.processing.process_silver_focos import SilverFocosProcessor
-from src.processing.process_silver_internacoes import SilverInternacoesProcessor
+from src.processing.process_silver_srag import SilverSRAGProcessor
 from src.processing.process_silver_join_integrado import SilverJoinIntegrator
 from src.processing.process_gold_indicadores import GoldIndicadoresProcessor
 from src.processing.process_gold_ml_ready import GoldMLReadyProcessor
@@ -43,7 +42,7 @@ def run_full_pipeline():
     logger.info("=" * 70)
 
     # -------------------------------------------------------------
-    # 1. CAMADA BRONZE (Ingestão das 3 Fontes Públicas Reais)
+    # 1. CAMADA BRONZE (Ingestão das 3 Fontes Públicas Reais: IBGE, INPE, OpenDataSUS)
     # -------------------------------------------------------------
     logger.info("\n[ETAPA 1/3] EXECUTANDO CAMADA BRONZE...")
     
@@ -57,11 +56,10 @@ def run_full_pipeline():
     inpe_path = inpe_ingestor.process_and_ingest(year=2023)
     logger.info(f"   Bronze INPE salva em: {inpe_path}")
 
-    logger.info("-> 1.3 Inicializando e Ingerindo Banco Relacional (DataSUS SIH com Watermark)...")
-    seed_operational_database()
-    datasus_ingestor = DataSUSRelationalIngestor()
-    datasus_path = datasus_ingestor.run_incremental_ingestion()
-    logger.info(f"   Bronze DataSUS salva em: {datasus_path}")
+    logger.info("-> 1.3 Ingestão Arquivo CSV (OpenDataSUS SRAG/SIVEP-Gripe 2023, checkpoint por hash)...")
+    srag_ingestor = SRAGIngestor()
+    srag_bronze_path = srag_ingestor.run_ingestion()
+    logger.info(f"   Bronze SRAG salva em: {srag_bronze_path}")
 
     # -------------------------------------------------------------
     # 2. CAMADA SILVER (Limpeza, Tipagem, Deduplicação e Joins)
@@ -78,10 +76,10 @@ def run_full_pipeline():
     focos_path = focos_proc.execute()
     logger.info(f"   Silver Fatos Focos salva em: {focos_path}")
 
-    logger.info("-> 2.3 Processando Fatos Mensais de Internações do DataSUS...")
-    intern_proc = SilverInternacoesProcessor()
-    intern_path = intern_proc.execute()
-    logger.info(f"   Silver Fatos Internações salva em: {intern_path}")
+    logger.info("-> 2.3 Processando Fatos Mensais de SRAG hospitalizado (OpenDataSUS)...")
+    srag_proc = SilverSRAGProcessor()
+    srag_path = srag_proc.execute()
+    logger.info(f"   Silver Fatos SRAG salva em: {srag_path}")
 
     logger.info("-> 2.4 Executando Join Integrado e Relatório de Auditoria...")
     join_proc = SilverJoinIntegrator()

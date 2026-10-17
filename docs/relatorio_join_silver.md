@@ -1,13 +1,13 @@
 # Relatório de Auditoria de Cruzamento das Bases (Requisito 1)
 
-Data de execução: 14/10/2026 19:18:42 UTC
+Data de execução: 17/10/2026 00:09:15 UTC
 
 ## 1. Definição da Chave de Cruzamento
 * **Chave Primária Composta:** `codigo_ibge` (código de 7 dígitos do município) e `ano_mes` (formato YYYY-MM).
 * **Entidades Envolvidas:**
   1. **IBGE:** Dimensão canônica dos 144 municípios do Pará e população do Censo 2022.
   2. **INPE (BDQueimadas):** Agregações mensais de focos de queimada.
-  3. **DataSUS (SIH):** Agregações mensais de internações por causas respiratórias (CID-10 J00-J99).
+  3. **OpenDataSUS — SRAG (SIVEP-Gripe):** Agregações mensais de casos de Síndrome Respiratória Aguda Grave hospitalizados, por município de residência e mês de notificação.
 
 ---
 
@@ -17,7 +17,7 @@ Data de execução: 14/10/2026 19:18:42 UTC
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **Grade Canônica (IBGE x Meses)** | 1728 | 1728 | 0 | 100.0% | Base canônica estrutural |
 | **INPE (Focos Mensais)** | 1044 | 1044 | 0 | 100.0% | Encaminhados à Quarentena |
-| **DataSUS (Internações Mensais)** | 1727 | 1727 | 0 | 100.0% | Encaminhados à Quarentena |
+| **OpenDataSUS (SRAG hospitalizado, mensal)** | 744 | 744 | 0 | 100.0% | Encaminhados à Quarentena |
 
 ---
 

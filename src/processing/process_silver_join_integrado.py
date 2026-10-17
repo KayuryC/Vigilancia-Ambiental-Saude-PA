@@ -2,7 +2,7 @@
 Processamento Silver: Join Integrado e Relatório de Integridade Referencial.
 Atende aos Requisitos 1 e 3:
 - Chave de cruzamento explícita e documentada: 'codigo_ibge' + 'ano_mes'.
-- Cruzamento das 3 bases públicas reais: IBGE (Municípios/População), INPE (Queimadas) e DataSUS (Internações).
+- Cruzamento das 3 bases públicas reais: IBGE (Municípios/População), INPE (Queimadas) e OpenDataSUS (SRAG/SIVEP-Gripe, casos hospitalizados).
 - Relatório formal de integridade do Join: contagem exata de registros casados vs. órfãos e justificativa técnica do tratamento.
 - Verificação de chave primária composta sem duplicatas.
 """
@@ -39,7 +39,7 @@ class SilverJoinIntegrator:
         """Carrega as tabelas Silver preparadas nos passos anteriores."""
         dim_municipios = pd.read_parquet(self.silver_dir / "dim_municipios_pa.parquet")
         fatos_focos = pd.read_parquet(self.silver_dir / "fatos_focos_mensais_pa.parquet")
-        fatos_internacoes = pd.read_parquet(self.silver_dir / "fatos_internacoes_mensais_pa.parquet")
+        fatos_internacoes = pd.read_parquet(self.silver_dir / "fatos_srag_mensais_pa.parquet")
         return dim_municipios, fatos_focos, fatos_internacoes
 
     def execute_join_and_audit(self):
@@ -77,7 +77,7 @@ class SilverJoinIntegrator:
         focos_casados = focos_keys_inpe.intersection(grid_keys)
         focos_orfaos = focos_keys_inpe - grid_keys
 
-        # 3. Auditoria e Contabilidade de Cruzamento - Internações do DataSUS
+        # 3. Auditoria e Contabilidade de Cruzamento - Casos de SRAG hospitalizados (OpenDataSUS)
         intern_keys_datasus = set(zip(df_intern["codigo_ibge"], df_intern["ano_mes"]))
         intern_casadas = intern_keys_datasus.intersection(grid_keys)
         intern_orfas = intern_keys_datasus - grid_keys
@@ -97,8 +97,8 @@ class SilverJoinIntegrator:
             df_join,
             df_intern[[
                 "codigo_ibge", "ano_mes", "total_internacoes",
-                "total_dias_leito", "media_dias_leito", "custo_total_sus",
-                "internacoes_urgencia", "internacoes_infantis", "internacoes_idosos"
+                "internacoes_uti", "internacoes_infantis", "internacoes_idosos",
+                "obitos_srag"
             ]],
             on=["codigo_ibge", "ano_mes"],
             how="left"
@@ -107,8 +107,8 @@ class SilverJoinIntegrator:
         # 5. Tratamento de Ausências Semânticas (Município sem foco ou internação no mês = 0)
         cols_zero_fill = [
             "total_focos_calor", "dias_com_focos", "total_internacoes",
-            "total_dias_leito", "media_dias_leito", "custo_total_sus",
-            "internacoes_urgencia", "internacoes_infantis", "internacoes_idosos"
+            "internacoes_uti", "internacoes_infantis", "internacoes_idosos",
+            "obitos_srag"
         ]
         df_join[cols_zero_fill] = df_join[cols_zero_fill].fillna(0)
 
@@ -163,7 +163,7 @@ Data de execução: {datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M:%S UTC"
 * **Entidades Envolvidas:**
   1. **IBGE:** Dimensão canônica dos 144 municípios do Pará e população do Censo 2022.
   2. **INPE (BDQueimadas):** Agregações mensais de focos de queimada.
-  3. **DataSUS (SIH):** Agregações mensais de internações por causas respiratórias (CID-10 J00-J99).
+  3. **OpenDataSUS — SRAG (SIVEP-Gripe):** Agregações mensais de casos de Síndrome Respiratória Aguda Grave hospitalizados, por município de residência e mês de notificação.
 
 ---
 
@@ -173,7 +173,7 @@ Data de execução: {datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M:%S UTC"
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **Grade Canônica (IBGE x Meses)** | {total_grid} | {total_grid} | 0 | 100.0% | Base canônica estrutural |
 | **INPE (Focos Mensais)** | {focos_total} | {focos_casados} | {focos_orfaos} | {(focos_casados / focos_total * 100):.1f}% | Encaminhados à Quarentena |
-| **DataSUS (Internações Mensais)** | {intern_total} | {intern_casadas} | {intern_orfas} | {(intern_casadas / intern_total * 100):.1f}% | Encaminhados à Quarentena |
+| **OpenDataSUS (SRAG hospitalizado, mensal)** | {intern_total} | {intern_casadas} | {intern_orfas} | {(intern_casadas / intern_total * 100):.1f}% | Encaminhados à Quarentena |
 
 ---
 

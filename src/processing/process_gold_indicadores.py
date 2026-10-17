@@ -62,13 +62,6 @@ class GoldIndicadoresProcessor:
         df["taxa_internacao_infantil_100k"] = (df["internacoes_infantis"] / pop * 100000.0).round(2).fillna(0.0)
         df["taxa_internacao_idosos_100k"] = (df["internacoes_idosos"] / pop * 100000.0).round(2).fillna(0.0)
 
-        # Custo médio por internação no SUS
-        df["custo_medio_internacao"] = np.where(
-            df["total_internacoes"] > 0,
-            (df["custo_total_sus"] / df["total_internacoes"]).round(2),
-            0.0
-        )
-
         # 2. Definição Sazonal da Amazônia Legal
         # Mês numérico
         df["mes_num"] = df["ano_mes"].str[-2:].astype(int)
