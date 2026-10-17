@@ -1,5 +1,5 @@
 # Requisitos do Projeto Integrador: Da Ingestão à Decisão
-# Ambiente Python >= 3.9
+# Ambiente Python 3.9 a 3.12 (testado em 3.11 e 3.12; as versões fixadas abaixo não têm pacotes prontos para 3.13)
 
 # Ingestão de Dados e APIs
 requests==2.31.0

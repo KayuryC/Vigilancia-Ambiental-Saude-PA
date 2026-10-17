@@ -89,7 +89,6 @@ O objetivo é investigar se o histórico de **focos de queimadas (INPE)** e indi
    ```
    Na primeira execução, o pipeline baixa o CSV do SRAG (~300 MB) para `data/landing/srag/`. Se você já tiver o arquivo `INFLUD23-23-03-2026.csv`, copie-o para essa pasta e o download é pulado.
 
-   > **macOS:** se aparecer `CERTIFICATE_VERIFY_FAILED`, o Python não encontrou os certificados do sistema. Rode `pip install truststore` e execute de novo; o `run_pipeline.py` passa a usar o chaveiro do sistema automaticamente.
 
 5. **Demonstrar a idempotência (duas execuções seguidas e comparação das tabelas):**
    ```bash
