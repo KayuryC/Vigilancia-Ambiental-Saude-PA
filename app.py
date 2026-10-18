@@ -123,6 +123,7 @@ df_indicators, df_decisions = load_data()
 
 CUSTO_FP = 3500.0   # Frete logístico preventivo
 CUSTO_FN = 45000.0  # Custo de resgate aéreo/UTI e desabastecimento
+ALTO_CORTE = 0.70   # Limiar para despacho de kit completo de emergência
 LIMIAR_ADOTADO = float(df_decisions["limiar_adotado"].iloc[0]) if "limiar_adotado" in df_decisions.columns else 0.40
 
 
@@ -133,7 +134,7 @@ def brl(v: float) -> str:
 # -------------------------------------------------------------
 # NAVEGAÇÃO HORIZONTAL DE SLIDES (ESTILO APRESENTAÇÃO)
 # -------------------------------------------------------------
-st.markdown("#### 🎯 **Painel de Defesa da Banca** | Projeto Integrador: Da Ingestão à Decisão")
+st.markdown("#### 🌳 **Vigilância Ambiental e Saúde no Pará** | Da Ingestão à Decisão")
 
 slides = [
     "1. A Decisão & O Problema",
