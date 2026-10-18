@@ -424,7 +424,51 @@ elif selected_slide == slides[3]:
 elif selected_slide == slides[4]:
     st.markdown('<span class="slide-tag">Slide 05 • Aplicação Prática</span>', unsafe_allow_html=True)
     st.markdown('<div class="slide-title">Simulador de Despacho Operacional da SESPA</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="slide-subtitle">Apoio em tempo real para o Secretário de Saúde • Mês de Corte: <b>{mes_selecionado}</b></div>', unsafe_allow_html=True)
+
+    # Controles do Simulador (Mês de corte, Mesorregião e Slider de Limiar)
+    c_sel1, c_sel2, c_sel3 = st.columns([1, 1.2, 1.4], gap="medium")
+    with c_sel1:
+        meses_disponiveis = sorted(df_decisions["ano_mes_t0"].unique().tolist())
+        mes_selecionado = st.selectbox(
+            "📅 Mês de Corte (t0):",
+            meses_disponiveis,
+            index=len(meses_disponiveis) - 1,
+            help="Mês em que a decisão é tomada antes do mês seguinte."
+        )
+    with c_sel2:
+        mesos_disponiveis = ["Todas as 6 Mesorregiões"] + sorted(df_decisions["mesorregiao"].unique().tolist())
+        meso_selecionada = st.selectbox("📍 Mesorregião do Pará:", mesos_disponiveis)
+    with c_sel3:
+        threshold = st.slider(
+            "🎚️ Limiar de Decisão (Score):",
+            min_value=0.05,
+            max_value=0.90,
+            value=min(max(LIMIAR_ADOTADO, 0.05), 0.90),
+            step=0.05,
+            help=f"Limiar padrão adotado pelo pipeline: {LIMIAR_ADOTADO:.2f}"
+        )
+
+    # Filtrar dados para os controles selecionados
+    df_filtrado = df_decisions[df_decisions["ano_mes_t0"] == mes_selecionado].copy()
+    if meso_selecionada != "Todas as 6 Mesorregiões":
+        df_filtrado = df_filtrado[df_filtrado["mesorregiao"] == meso_selecionada].copy()
+
+    df_filtrado["decisao_dinamica"] = np.where(
+        df_filtrado["probabilidade_risco"] >= ALTO_CORTE,
+        "Alerta Alto: Envio de Kit Completo (O2 + Broncodilatadores)",
+        np.where(
+            df_filtrado["probabilidade_risco"] >= threshold,
+            "Alerta Médio: Reforço Preventivo e Equipe Volante",
+            "Monitoramento de Rotina"
+        )
+    )
+
+    total_mun = len(df_filtrado)
+    alerta_alto = int((df_filtrado["probabilidade_risco"] >= ALTO_CORTE).sum())
+    alerta_medio = int(((df_filtrado["probabilidade_risco"] >= threshold) & (df_filtrado["probabilidade_risco"] < ALTO_CORTE)).sum())
+    pop_sob_alerta = float(df_filtrado[df_filtrado["probabilidade_risco"] >= threshold]["populacao_censo_2022"].sum())
+
+    st.markdown(f'<div class="slide-subtitle">Apoio em tempo real para o Secretário de Saúde • Mês de Corte: <b>{mes_selecionado}</b> | Região: <b>{meso_selecionada}</b></div>', unsafe_allow_html=True)
 
     # 4 KPIs em destaque
     k1, k2, k3, k4 = st.columns(4)
@@ -441,7 +485,7 @@ elif selected_slide == slides[4]:
         <div class="card-clean" style="border-left: 5px solid #eab308;">
             <div class="kpi-desc">⚠️ Alerta Médio (Reforço)</div>
             <div class="kpi-num">{alerta_medio}</div>
-            <span style="font-size: 0.8rem; color: #64748b;">Risco entre {LIMIAR_ADOTADO:.2f} e 70%</span>
+            <span style="font-size: 0.8rem; color: #64748b;">Risco entre {threshold:.2f} e 70%</span>
         </div>
         """, unsafe_allow_html=True)
     with k3:
