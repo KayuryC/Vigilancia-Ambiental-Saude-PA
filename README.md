@@ -120,7 +120,7 @@ O objetivo é investigar se o histórico de **focos de queimadas (INPE)** e indi
 
 ## 👥 Integrantes da Equipe e Contribuições
 * **Fernando Fonseca** ([@fernandofonsecadev](mailto:fernandofonsecadev@gmail.com)) — Auditoria de conformidade com os requisitos, especificação de limitações dos dados, registro de licenças/fontes públicas e guia operacional de decisão.
-* **Kayo Carneiro** ([@kayocarneiro77](mailto:kayocarneiro77@gmail.com)) — Engenharia do pipeline medalhão, ingestão de dados, modelagem preditiva ML-Ready e dashboard interativo Streamlit.
+* **Kayury Carneiro** ([@kayocarneiro77](mailto:kayocarneiro77@gmail.com)) — Engenharia do pipeline medalhão, ingestão de dados, modelagem preditiva ML-Ready e dashboard interativo Streamlit.
 * **Nathalia Gomes** ([@naathggg](mailto:naathgg213@gmail.com)) - Migração do pipeline para a base real SRAG (ingestão com checkpoint, Silver agregada sem dados pessoais e quarentena), teste de idempotência e avaliação do modelo (baselines e limiar por custo).
 
 ---
@@ -129,5 +129,6 @@ O objetivo é investigar se o histórico de **focos de queimadas (INPE)** e indi
 Ferramentas de IA generativa foram utilizadas neste projeto. A declaração é feita por integrante, com a ferramenta, a finalidade e os arquivos envolvidos. Todo integrante deve saber explicar qualquer trecho entregue.
 
 * **Nathalia Gomes: Claude (Anthropic).** Usado para auditar o repositório contra o enunciado; escrever a ingestão e a Silver do SRAG (`src/ingestion/ingest_srag_opendatasus.py`, `src/processing/process_silver_srag.py`), o script `scripts/demo_idempotencia.py` e a reescrita do módulo de ML-Ready e decisão (`src/processing/process_gold_ml_ready.py`); e redigir as atualizações de README, dicionário de dados e dashboard desta versão. Os resultados foram reproduzidos pela integrante executando o pipeline com os dados reais.
+* **Kayury Carneiro: Antigravity / Gemini (Google) e Claude (Anthropic).** Usado para assistência técnica na refatoração e estilização executiva do dashboard (`app.py`), estruturação modular das camadas Medalhão (`src/ingestion/`, `src/processing/`, `run_pipeline.py`), validação de idempotência, testes de não-vazamento temporal e geração dos gráficos interativos Plotly. Todas as implementações, regras de quarentena, métricas de negócio e lógicas operacionais foram validadas e são de pleno domínio do integrante.
 * **Fernando Fonseca:** `[PENDENTE: informar ferramenta, finalidade e arquivos, ou declarar que não usou]`
-* **Kayo Carneiro:** `[PENDENTE: informar ferramenta, finalidade e arquivos, ou declarar que não usou]`
+
