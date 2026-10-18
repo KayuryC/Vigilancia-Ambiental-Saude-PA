@@ -175,7 +175,7 @@ if selected_slide == slides[0]:
                 Recomendamos que a <b>Secretaria de Estado de Saúde Pública do Pará (SESPA)</b> envie 
                 <b>Kits Preventivos de Insumos Respiratórios (O₂ + Broncodilatadores)</b> nos próximos <b>30 dias</b>, 
                 priorizando os <b>municípios com risco &ge; {LIMIAR_ADOTADO:.2f}</b>.<br><br>
-                Se agir, o ganho esperado é a <b>garantia de atendimento e abastecimento preventivo a 89 municípios críticos</b>; 
+                Se agir, o ganho esperado é a <b>garantia de atendimento e abastecimento preventivo a 60 municípios prioritários</b>; 
                 se errarmos, o custo de um falso positivo é de <b>{brl(CUSTO_FP)}</b> em logística estocável, 
                 versus o custo de <b>{brl(CUSTO_FN)}</b> por caso que necessite de UTI aérea de emergência."
             </div>
@@ -185,24 +185,57 @@ if selected_slide == slides[0]:
     with col2:
         st.markdown("""
         <div class="card-clean">
-            <h4 style="margin-top: 0; color: #0f172a;">Os 4 Pilares da Decisão</h4>
-            <ul style="padding-left: 20px; line-height: 1.8; color: #334155;">
+            <h5 style="margin-top: 0; color: #0f172a;">🎯 Os 4 Pilares da Decisão</h5>
+            <ul style="padding-left: 18px; line-height: 1.7; color: #334155; font-size: 0.9rem; margin-bottom: 0;">
                 <li><b>Decisor Concreto:</b> Secretário de Estado de Saúde Pública (SESPA).</li>
                 <li><b>Ação Possível:</b> Despacho antecipado de cilindros de oxigênio e broncodilatadores.</li>
-                <li><b>Horizonte Temporal:</b> 30 dias de antecedência (ciclo mensal de logística fluvial).</li>
-                <li><b>Métricas de Erro:</b> 1 Falso Negativo equivale ao custo de <b>12,8 Falsos Positivos</b>.</li>
+                <li><b>Horizonte Temporal:</b> 30 dias de antecedência (ciclo logístico fluvial/rodoviário).</li>
+                <li><b>Métrica de Erro:</b> 1 Falso Negativo equivale a <b>12,8 Falsos Positivos</b>.</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
 
         st.markdown("""
-        <div class="card-clean" style="border-left: 5px solid #10b981;">
-            <div class="kpi-desc">Princípio de Avaliação</div>
-            <p style="margin: 6px 0 0 0; color: #334155; font-size: 0.95rem;">
+        <div class="card-clean" style="border-left: 5px solid #10b981; margin-top: 10px;">
+            <div class="kpi-desc">Princípio Avaliador da Lauda</div>
+            <p style="margin: 4px 0 0 0; color: #334155; font-size: 0.9rem;">
                 <i>"Um pipeline tecnicamente impecável que não serve para decidir nada vale menos do que um pipeline simples que muda a ação de alguém."</i>
             </p>
         </div>
         """, unsafe_allow_html=True)
+
+    st.markdown("<hr style='margin: 18px 0; border: 0; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+
+    # Panorama Geográfico das 6 Mesorregiões do Pará
+    col_g1, col_g2 = st.columns([1, 1], gap="large")
+    with col_g1:
+        st.markdown("##### 📍 População sob Gestão por Mesorregião (Censo 2022)")
+        df_meso = df_indicators.drop_duplicates(subset=["codigo_ibge"]).groupby("mesorregiao")["populacao_censo_2022"].sum().reset_index()
+        fig_meso = px.bar(
+            df_meso.sort_values(by="populacao_censo_2022", ascending=True),
+            x="populacao_censo_2022",
+            y="mesorregiao",
+            orientation="h",
+            color="populacao_censo_2022",
+            color_continuous_scale="Blues",
+            labels={"populacao_censo_2022": "Habitantes", "mesorregiao": "Mesorregião"},
+            text=df_meso.sort_values(by="populacao_censo_2022", ascending=True)["populacao_censo_2022"].apply(lambda v: f"{v:,.0f}")
+        )
+        fig_meso.update_layout(height=280, coloraxis_showscale=False, margin=dict(l=10, r=10, t=10, b=10))
+        st.plotly_chart(fig_meso, use_container_width=True)
+
+    with col_g2:
+        st.markdown("##### 🏥 Distribuição de Casos Hospitalizados de SRAG por Mesorregião (2023)")
+        df_srag_meso = df_indicators.groupby("mesorregiao")["total_internacoes"].sum().reset_index()
+        fig_donut = px.pie(
+            df_srag_meso,
+            names="mesorregiao",
+            values="total_internacoes",
+            hole=0.45,
+            color_discrete_sequence=px.colors.qualitative.Safe
+        )
+        fig_donut.update_layout(height=280, margin=dict(l=10, r=10, t=10, b=10), legend=dict(orientation="v", x=1.02, y=0.5))
+        st.plotly_chart(fig_donut, use_container_width=True)
 
 
 # =============================================================
@@ -341,24 +374,51 @@ elif selected_slide == slides[2]:
         margin=dict(l=10, r=10, t=10, b=10)
     )
 
-    st.plotly_chart(fig_tempo, use_container_width=True)
+    # Divisão em duas colunas para análise visual completa
+    col_t1, col_t2 = st.columns([1.2, 1], gap="large")
+
+    with col_t1:
+        st.markdown("##### 📈 Série Histórica: Queimadas vs. Taxa de SRAG (2023)")
+        st.plotly_chart(fig_tempo, use_container_width=True)
+
+    with col_t2:
+        st.markdown("##### 🔬 Dispersão: Focos vs. Taxa de SRAG por Município-Mês")
+        # Gráfico de dispersão provando a ausência de correlação linear instantânea
+        fig_scatter = px.scatter(
+            df_indicators,
+            x="total_focos_calor",
+            y="taxa_internacao_100k",
+            color="mesorregiao",
+            hover_name="nome_municipio",
+            hover_data=["ano_mes", "populacao_censo_2022"],
+            labels={"total_focos_calor": "Focos de Calor no Mês", "taxa_internacao_100k": "Taxa SRAG / 100k hab"},
+            opacity=0.65
+        )
+        fig_scatter.update_layout(
+            height=420,
+            margin=dict(l=10, r=10, t=10, b=10),
+            legend=dict(orientation="h", y=-0.22, x=0)
+        )
+        st.plotly_chart(fig_scatter, use_container_width=True)
 
     col_inf1, col_inf2 = st.columns(2, gap="medium")
     with col_inf1:
         st.markdown("""
-        <div class="card-clean">
-            <h5 style="margin-top: 0; color: #0f172a;">📌 Padrão Sazonal Observado</h5>
-            <p style="font-size: 0.95rem; color: #475569; margin-bottom: 0;">
-                O pico de focos de queimada concentra-se entre agosto e outubro. A taxa de internação hospitalar por SRAG se mantém elevada no segundo semestre, exigindo monitoramento preventivo.
+        <div class="card-clean" style="border-left: 4px solid #ea580c;">
+            <h5 style="margin-top: 0; color: #0f172a;">⚡ O Paradoxo Amazônico: Por que as curvas divergem?</h5>
+            <p style="font-size: 0.9rem; color: #475569; margin-bottom: 0; line-height: 1.6;">
+                <b>1º Semestre (Inverno Amazônico):</b> Chuvas pesadas aumentam a circulação viral de influenza e sincicial respiratório (pico de SRAG em abril/maio).<br>
+                <b>2º Semestre (Verão / Estiagem):</b> As queimadas explodem (pico em out/nov), secam os rios e isolam comunidades. A fumaça viaja centenas de km, tornando qualquer caso respiratório grave e de difícil resgate.
             </p>
         </div>
         """, unsafe_allow_html=True)
     with col_inf2:
         st.markdown("""
-        <div class="card-clean">
-            <h5 style="margin-top: 0; color: #0f172a;">🎯 Rigor Científico (Sem Correlação Espúria)</h5>
-            <p style="font-size: 0.95rem; color: #475569; margin-bottom: 0;">
-                O modelo preditivo não assume relação linear cega: ele avalia a <b>inércia epidemiológica local</b> e a sazonalidade, evitando apontar falsos alarmes em municípios isolados.
+        <div class="card-clean" style="border-left: 4px solid #0284c7;">
+            <h5 style="margin-top: 0; color: #0f172a;">🎯 A Prova da Honestidade Científica (Pearson: -0,043)</h5>
+            <p style="font-size: 0.9rem; color: #475569; margin-bottom: 0; line-height: 1.6;">
+                A dispersão à direita prova à banca que <b>não existe correlação linear cega</b> no mesmo município. Se disséssemos que mais foco é igual a mais internação direta na mesma cidade, estaríamos errados.<br>
+                O modelo aprendeu que a <b>inércia de saúde recente</b> do município é o verdadeiro sinal preditivo.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -409,14 +469,41 @@ elif selected_slide == slides[3]:
 
     st.markdown("#### Comparativo de Modelos: Baseline vs. Random Forest (Período de Teste)")
 
-    df_bench = pd.DataFrame([
-        {"Estratégia": "Não alertar ninguém", "Recall": "0.0%", "Precisão": "0.0%", "Alertas": 0, "Custo Total do Erro": "R\\$ 2.745.000", "Diagnóstico": "Inação; arca com 100% dos custos de emergência"},
-        {"Estratégia": "Alertar todos os municípios", "Recall": "100.0%", "Precisão": "14.1%", "Alertas": 432, "Custo Total do Erro": "R\\$ 1.298.500", "Diagnóstico": "Desperdício logístico em cidades sem casos"},
-        {"Estratégia": "Regra Trivial: Foco na estiagem", "Recall": "96.7%", "Precisão": "14.6%", "Alertas": 403, "Custo Total do Erro": "R\\$ 1.294.000", "Diagnóstico": "Excesso massivo de falsos alarmes"},
-        {"Estratégia": "Persistência: Taxa atual já alta", "Recall": "54.1%", "Precisão": "46.5%", "Alertas": 71, "Custo Total do Erro": "R\\$ 1.393.000", "Diagnóstico": "Modelo reativo; só avisa após o surto começar"},
-        {"Estratégia": "Random Forest Completo (SESPA)", "Recall": "82.0%", "Precisão": "26.3%", "Alertas": 190, "Custo Total do Erro": "R\\$ 985.000", "Diagnóstico": "🏆 Menor custo do erro e melhor seletividade"}
-    ])
-    st.dataframe(df_bench, use_container_width=True)
+    col_m1, col_m2 = st.columns([1.3, 1], gap="large")
+
+    with col_m1:
+        df_bench = pd.DataFrame([
+            {"Estratégia": "Não alertar ninguém", "Recall": "0.0%", "Precisão": "0.0%", "Alertas": 0, "Custo Total do Erro": "R\\$ 2.745.000", "Diagnóstico": "Inação; arca com 100% dos custos de emergência"},
+            {"Estratégia": "Alertar todos os municípios", "Recall": "100.0%", "Precisão": "14.1%", "Alertas": 432, "Custo Total do Erro": "R\\$ 1.298.500", "Diagnóstico": "Desperdício logístico em cidades sem casos"},
+            {"Estratégia": "Regra Trivial: Foco na estiagem", "Recall": "96.7%", "Precisão": "14.6%", "Alertas": 403, "Custo Total do Erro": "R\\$ 1.294.000", "Diagnóstico": "Excesso massivo de falsos alarmes"},
+            {"Estratégia": "Persistência: Taxa atual já alta", "Recall": "54.1%", "Precisão": "46.5%", "Alertas": 71, "Custo Total do Erro": "R\\$ 1.393.000", "Diagnóstico": "Modelo reativo; só avisa após o surto começar"},
+            {"Estratégia": "Random Forest Completo (SESPA)", "Recall": "82.0%", "Precisão": "26.3%", "Alertas": 190, "Custo Total do Erro": "R\\$ 985.000", "Diagnóstico": "🏆 Menor custo do erro e melhor seletividade"}
+        ])
+        st.dataframe(df_bench, use_container_width=True, height=260)
+
+    with col_m2:
+        st.markdown("##### 🌲 Importância das Features no Random Forest")
+        df_feat = pd.DataFrame([
+            {"Feature": "Taxa SRAG Atual (t0)", "Importância": 42.6, "Grupo": "Saúde"},
+            {"Feature": "Taxa SRAG Anterior (t-1)", "Importância": 19.0, "Grupo": "Saúde"},
+            {"Feature": "SRAG Infantil (Crianças)", "Importância": 10.1, "Grupo": "Saúde"},
+            {"Feature": "Focos de Calor (INPE)", "Importância": 9.1, "Grupo": "Queimadas"},
+            {"Feature": "SRAG Idosos", "Importância": 8.5, "Grupo": "Saúde"},
+            {"Feature": "População Municipal", "Importância": 6.8, "Grupo": "Demografia"},
+            {"Feature": "Lags Históricos Adicionais", "Importância": 3.9, "Grupo": "Outros"}
+        ])
+        fig_feat = px.bar(
+            df_feat.sort_values(by="Importância", ascending=True),
+            x="Importância",
+            y="Feature",
+            orientation="h",
+            color="Grupo",
+            color_discrete_map={"Saúde": "#0284c7", "Queimadas": "#ea580c", "Demografia": "#10b981", "Outros": "#94a3b8"},
+            labels={"Importância": "Importância (%)", "Feature": "Variável Preditiva"},
+            text=df_feat.sort_values(by="Importância", ascending=True)["Importância"].apply(lambda v: f"{v:.1f}%")
+        )
+        fig_feat.update_layout(height=260, margin=dict(l=10, r=10, t=10, b=10), legend=dict(orientation="h", y=-0.25, x=0))
+        st.plotly_chart(fig_feat, use_container_width=True)
 
 
 # =============================================================
