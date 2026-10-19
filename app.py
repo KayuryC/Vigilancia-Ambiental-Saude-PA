@@ -51,13 +51,13 @@ st.markdown("""
     .slide-title {
         font-size: 1.85rem;
         font-weight: 800;
-        color: #0f172a;
+        color: #ffffff;
         margin-bottom: 0.4rem;
         line-height: 1.25;
     }
     .slide-subtitle {
         font-size: 1.05rem;
-        color: #64748b;
+        color: #2563eb;
         margin-bottom: 1.6rem;
     }
     /* Cards executivos */
@@ -354,6 +354,7 @@ elif selected_slide == slides[2]:
         layer="below", line_width=0,
         annotation_text="Período Crítico de Estiagem (Julho a Novembro)",
         annotation_position="top left"
+        
     )
 
     fig_tempo.update_layout(
@@ -368,10 +369,10 @@ elif selected_slide == slides[2]:
             overlaying="y",
             side="right"
         ),
-        legend=dict(x=0.01, y=0.99, bgcolor="rgba(255,255,255,0.85)"),
+        legend=dict(x=0.01, y=0.99, bgcolor="rgba(255,255,255,0.15)"),
         hovermode="x unified",
-        height=420,
-        margin=dict(l=10, r=10, t=10, b=10)
+        height=500,
+        margin=dict(l=20, r=25, t=20, b=25)
     )
 
     # Divisão em duas colunas para análise visual completa
